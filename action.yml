@@ -1,0 +1,48 @@
+name: 'balena.yml Action'
+description: 'Automate the balena.yml content on push'
+branding:
+  icon: 'code'  
+  color: 'blue'
+inputs:
+  sync_readme:
+    description: "Mirror the GitHub README into the Balena Hub README"
+    required: false
+    default: true
+    type: boolean 
+  sync_tag:
+    description: "Match the Balena Hub version number with the pushed tag"
+    required: false
+    default: true
+    type: boolean 
+
+runs:
+  using: 'composite'
+  steps:
+    # Stores the README.md file in an environment variable, allowing for multiline text
+    - if: ${{ inputs.sync_readme == 'true' }}
+      run: |
+        README_OUTPUT="$(cat README.md)"
+        echo "README_OUTPUT<<EOF" >> $GITHUB_ENV
+        echo "$README_OUTPUT" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+      shell: bash
+
+    # Writes the README file to balena.yml 
+    - if: ${{ inputs.sync_readme == 'true' }}
+      uses: fjogeleit/yaml-update-action@1b05b4490e1fdeea39cb42d2ba7c621c94fd5088
+      with:
+        valueFile: "balena.yml"
+        propertyPath: '.["post-provisioning"]'
+        value: ${{ env.README_OUTPUT }}
+        commitChange: false
+        updateFile: true   
+
+    # Updates the version value of the balena.yml to match the tag pushed to the users commit
+    - if: ${{ inputs.sync_tag == 'true' }}
+      uses: fjogeleit/yaml-update-action@1b05b4490e1fdeea39cb42d2ba7c621c94fd5088
+      with:
+        valueFile: "balena.yml"
+        propertyPath: "version"
+        value: ${{ github.ref_name }}
+        commitChange: false
+        updateFile: true

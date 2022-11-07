@@ -1,0 +1,5 @@
+# General 
+.DS_Store
+.thumbs.db
+.vscode
+dist
