@@ -12,7 +12,7 @@ inputs:
   sync_tag:
     description: "Match the Balena Hub version number with the pushed tag"
     required: false
-    default: true
+    default: false
     type: boolean 
 
 runs:
