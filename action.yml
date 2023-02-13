@@ -4,6 +4,10 @@ branding:
   icon: 'code'  
   color: 'blue'
 inputs:
+  path:
+    description: "Specify a path to find README.md and balena.yml"
+    required: false
+    default: ./
   sync_readme:
     description: "Mirror the GitHub README into the Balena Hub README"
     required: false
@@ -18,31 +22,16 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    # Stores the README.md file in an environment variable, allowing for multiline text
-    - if: ${{ inputs.sync_readme == 'true' }}
-      run: |
-        README_OUTPUT="$(cat README.md)"
-        echo "README_OUTPUT<<EOF" >> $GITHUB_ENV
-        echo "$README_OUTPUT" >> $GITHUB_ENV
-        echo "EOF" >> $GITHUB_ENV
-      shell: bash
-
     # Writes the README file to balena.yml 
     - if: ${{ inputs.sync_readme == 'true' }}
-      uses: fjogeleit/yaml-update-action@1b05b4490e1fdeea39cb42d2ba7c621c94fd5088
-      with:
-        valueFile: "balena.yml"
-        propertyPath: '.["post-provisioning"]'
-        value: ${{ env.README_OUTPUT }}
-        commitChange: false
-        updateFile: true   
+      run: | 
+        cd ${{ inputs.path }}
+        PP=$(cat README.md) yq -i '.post-provisioning = strenv(PP)' balena.yml
+      shell: bash
 
     # Updates the version value of the balena.yml to match the tag pushed to the users commit
     - if: ${{ inputs.sync_tag == 'true' }}
-      uses: fjogeleit/yaml-update-action@1b05b4490e1fdeea39cb42d2ba7c621c94fd5088
-      with:
-        valueFile: "balena.yml"
-        propertyPath: "version"
-        value: ${{ github.ref_name }}
-        commitChange: false
-        updateFile: true
+      run: |
+        cd ${{ inputs.path }}
+        VERSION=${{ github.ref_name }} yq -i '.version = strenv(VERSION)' balena.yml
+      shell: bash

@@ -22,6 +22,7 @@ jobs:
       - name: Update balena.yml
         uses: balena-io-experimental/balena.yml-action@main
         with:
+          path: ./
           sync_readme: true
           sync_tag: true
 
